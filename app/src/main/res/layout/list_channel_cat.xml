@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/linearlayout_channel_cat"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_cat_panel">
+
+    <ListView
+        android:id="@+id/listview_channel_cat"
+        android:layout_width="130dp"
+        android:layout_height="350dp" />
+</LinearLayout>
