@@ -40,16 +40,18 @@ public class ChannelAdapter extends BaseAdapter {
     private ArrayList<ChannelObject> channels = new ArrayList<>();
     private PlayerControl mPlayerControl;
     private ExoPlayer mExoPlayer;
+    private boolean channelViewStyle = true;
 
     SharedPreferences prefs;
     SharedPreferences.Editor editor;
     Vibrator v;
 
-    public ChannelAdapter(Context mContext, ArrayList<ChannelObject> channels, PlayerControl playerControl, ExoPlayer exoPlayer) {
+    public ChannelAdapter(Context mContext, ArrayList<ChannelObject> channels, PlayerControl playerControl, ExoPlayer exoPlayer, boolean channelViewStyle) {
         this.mContext = mContext;
         this.channels = channels;
         this.mPlayerControl = playerControl;
         this.mExoPlayer = exoPlayer;
+        this.channelViewStyle = channelViewStyle;
         prefs = mContext.getSharedPreferences(Constants.APP_PREF, Context.MODE_PRIVATE);
         editor = prefs.edit();
 
@@ -78,7 +80,8 @@ public class ChannelAdapter extends BaseAdapter {
 
         if (view == null) {
             final LayoutInflater layoutInflater = LayoutInflater.from(mContext);
-            view = layoutInflater.inflate(R.layout.channel_layout, null);
+            view = channelViewStyle ? layoutInflater.inflate(R.layout.channel_layout, null)
+                    : layoutInflater.inflate(R.layout.channel_view_card, null);
         }
 
         view.setOnClickListener(new View.OnClickListener() {
@@ -91,9 +94,7 @@ public class ChannelAdapter extends BaseAdapter {
                 playingRadioChannel(mContext,co,mExoPlayer);
                 int adCounter = prefs.getInt("ad_counter", 0);
                 adCounter++;
-                if (adCounter == 1) {
-                    MainActivity.showFullAds();
-                } else if (adCounter%3 == 0) {
+                if (adCounter%3 == 0) {
                     MainActivity.showFullAds();
                 }
                 if (adCounter >= (Integer.MAX_VALUE - 20)) {
@@ -141,7 +142,7 @@ public class ChannelAdapter extends BaseAdapter {
                     editor.putString(Constants.PREF_LIST_FAV_CHANNEL, favChannelAfterRemove);
                     editor.apply();
                     ArrayList<ChannelObject> listChannels = FunctionHelper.ConvertChannelStrToList(favChannelAfterRemove);
-                    ChannelAdapter channelAdapter = new ChannelAdapter(mContext, listChannels, mPlayerControl, mExoPlayer);
+                    ChannelAdapter channelAdapter = new ChannelAdapter(mContext, listChannels, mPlayerControl, mExoPlayer, MainActivity.channelViewStyle);
                     MainActivity.channelGrid.setAdapter(channelAdapter);
                     vibrateDevice(250);
                     MainActivity.likeBtn.setBackgroundResource(R.drawable.fav_empty_icon);
@@ -152,10 +153,17 @@ public class ChannelAdapter extends BaseAdapter {
             }
         });
 
-        final TextView channelName = view.findViewById(R.id.gridview_item_text);
-        final ImageView channelImg = view.findViewById(R.id.gridview_item_img);
+        final TextView channelName = channelViewStyle ? (TextView) view.findViewById(R.id.gridview_item_text)
+                : (TextView) view.findViewById(R.id.card_channel_text);
+        final ImageView channelImg = channelViewStyle ? (ImageView) view.findViewById(R.id.gridview_item_img)
+                : (ImageView) view.findViewById(R.id.card_item_img);
+        final TextView channelCat = channelViewStyle ? null
+                : (TextView) view.findViewById(R.id.card_channel_cat);
 
         channelName.setText(co.getName());
+        if (!channelCat.equals(null)) {
+            channelCat.setText(co.getCat());
+        }
         if (!co.getPic().isEmpty()) {
             Picasso.with(mContext).load(co.getPic()).into(channelImg, new Callback() {
                 @Override

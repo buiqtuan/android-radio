@@ -84,6 +84,10 @@ public class MainActivity extends AppCompatActivity {
     private static ArrayList<ChannelObject> listChannels = new ArrayList<>();
     private ArrayList<ChannelObject> listChannelsByCat = new ArrayList<>();
 
+    //app UI state
+    public static boolean themeStyle = true; // true is night - false is day
+    public static boolean channelViewStyle = true; // true is grid - false is list
+
     //Ad counter
     public static int adCounter = 0;
 
@@ -112,12 +116,12 @@ public class MainActivity extends AppCompatActivity {
             StrictMode.setThreadPolicy(policy);
         }
 
-        prefs = getBaseContext().getSharedPreferences(Constants.APP_PREF, Context.MODE_PRIVATE);
-        editor = prefs.edit();
-        if (!prefs.contains("ad_counter")) {
-            editor.putInt("ad_counter", adCounter);
-            editor.apply();
-        }
+        initDefaultAppPrefs();
+
+        //get app prefs
+        themeStyle = prefs.getBoolean("app_theme", true);
+        channelViewStyle = prefs.getBoolean("channels_view_style", true);
+
 
         //save list channel to sharedprefs
         runOnUiThread(new Runnable() {
@@ -135,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
                 catChannel.setText("Category: All");
                 listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL,"")));
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
                 channelGrid.setAdapter(channelAdapter);
             }
         });
@@ -147,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
                 changeTextColorWhenSwitchingTabs(myFavorites,allChannel,catChannel);
                 String listFavChannelStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,"");
                 listChannels = FunctionHelper.ConvertChannelStrToList(listFavChannelStr);
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
                 channelGrid.setAdapter(channelAdapter);
             }
         });
@@ -185,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
                         searchingList.add(co);
                     }
                 }
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), searchingList, mPlayerControl, mExoPlayer);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), searchingList, mPlayerControl, mExoPlayer, channelViewStyle);
                 channelGrid.setAdapter(channelAdapter);
             }
 
@@ -214,6 +218,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void initDefaultAppPrefs() {
+        prefs = getBaseContext().getSharedPreferences(Constants.APP_PREF, Context.MODE_PRIVATE);
+        editor = prefs.edit();
+        //get App UI state
+        if (!prefs.contains("app_theme")) {
+            editor.putBoolean("app_theme", true);
+            editor.apply();
+        }
+        if (!prefs.contains("channels_view_style")) {
+            editor.putBoolean("channels_view_style", true);
+            editor.apply();
+        }
+        //set ad counter
+        if (!prefs.contains("ad_counter")) {
+            editor.putInt("ad_counter", adCounter);
+            editor.apply();
+        }
+    }
+
 
     private Point getPointOfView(View view) {
         int[] location = new int[2];
@@ -256,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
                         listChannelsByCat.add(co);
                     }
                 }
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannelsByCat, mPlayerControl,mExoPlayer);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannelsByCat, mPlayerControl,mExoPlayer, channelViewStyle);
                 channelGrid.setAdapter(channelAdapter);
             }
         });
@@ -432,10 +456,21 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer);
-            channelGrid.setAdapter(channelAdapter);
             appLoadingIcon.setVisibility(View.GONE);
-            channelGrid.setVisibility(View.VISIBLE);
+            if (channelViewStyle) {
+                // display gird view
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, channelViewStyle);
+                channelGrid.setAdapter(channelAdapter);
+                channelGrid.setVisibility(View.VISIBLE);
+                channelList.setVisibility(View.GONE);
+
+            } else {
+                // display list view
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
+                channelList.setAdapter(channelAdapter);
+                channelList.setVisibility(View.VISIBLE);
+                channelGrid.setVisibility(View.GONE);
+            }
             changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
         }
     }
@@ -489,7 +524,7 @@ public class MainActivity extends AppCompatActivity {
                     likeBtn.setBackgroundResource(R.drawable.fav_filled_icon);
                 }
                 if (channelGridState == 1) {
-                    ChannelAdapter channelAdapter = new ChannelAdapter(context, listChannels, mPlayerControl, mExoPlayer);
+                    ChannelAdapter channelAdapter = new ChannelAdapter(context, listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
                     channelGrid.setAdapter(channelAdapter);
                 }
             }
