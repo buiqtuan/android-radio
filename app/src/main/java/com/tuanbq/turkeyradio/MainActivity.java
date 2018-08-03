@@ -53,9 +53,8 @@ public class MainActivity extends AppCompatActivity {
     public static GridView channelGrid;
     public static ListView catListView, channelList;
     ProgressBar appLoadingIcon;
-    static ImageButton likeBtn;
+    static ImageButton likeBtn, playPauseIcon, changeViewChannelStyle, changeAppTheme;
     static ImageView playingChannelImg;
-    static ImageButton playPauseIcon;
     static ProgressBar channelLoadingIcon;
     SeekBar volumeController;
 
@@ -140,7 +139,11 @@ public class MainActivity extends AppCompatActivity {
                 catChannel.setText("Category: All");
                 listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL,"")));
                 ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
-                channelGrid.setAdapter(channelAdapter);
+                if (channelViewStyle) {
+                    channelGrid.setAdapter(channelAdapter);
+                } else {
+                    channelList.setAdapter(channelAdapter);
+                }
             }
         });
 
@@ -152,7 +155,11 @@ public class MainActivity extends AppCompatActivity {
                 String listFavChannelStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,"");
                 listChannels = FunctionHelper.ConvertChannelStrToList(listFavChannelStr);
                 ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
-                channelGrid.setAdapter(channelAdapter);
+                if (channelViewStyle) {
+                    channelGrid.setAdapter(channelAdapter);
+                } else {
+                    channelList.setAdapter(channelAdapter);
+                }
             }
         });
 
@@ -190,7 +197,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), searchingList, mPlayerControl, mExoPlayer, channelViewStyle);
-                channelGrid.setAdapter(channelAdapter);
+                if (channelViewStyle) {
+                    channelGrid.setAdapter(channelAdapter);
+                } else {
+                    channelList.setAdapter(channelAdapter);
+                }
             }
 
             @Override
@@ -281,7 +292,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannelsByCat, mPlayerControl,mExoPlayer, channelViewStyle);
-                channelGrid.setAdapter(channelAdapter);
+                if (channelViewStyle) {
+                    channelGrid.setAdapter(channelAdapter);
+                } else {
+                    channelList.setAdapter(channelAdapter);
+                }
             }
         });
 
@@ -386,17 +401,43 @@ public class MainActivity extends AppCompatActivity {
 
         //init listview channels
         channelList = findViewById(R.id.channel_list_view);
+        changeViewChannelStyle = findViewById(R.id.change_view_channel_style);
+        changeAppTheme = findViewById(R.id.change_app_theme);
+        enableChangeAppStateBtns();
+    }
+
+    private void enableChangeAppStateBtns() {
+        changeViewChannelStyle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                channelViewStyle = channelViewStyle ? false : true;
+                if (channelViewStyle) {
+                    channelGrid.setVisibility(View.VISIBLE);
+                    channelList.setVisibility(View.GONE);
+                } else {
+                    channelGrid.setVisibility(View.GONE);
+                    channelList.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        changeAppTheme.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
     }
 
     private void changeChannelViewStyle() {
         if (channelGrid.getVisibility() == View.VISIBLE) {
+            channelViewStyle = false;
             channelGrid.setVisibility(View.GONE);
-
             return;
         }
         if (channelList.getVisibility() == View.VISIBLE) {
+            channelViewStyle = true;
             channelList.setVisibility(View.GONE);
-
             return;
         }
     }

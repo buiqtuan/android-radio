@@ -161,7 +161,7 @@ public class ChannelAdapter extends BaseAdapter {
                 : (TextView) view.findViewById(R.id.card_channel_cat);
 
         channelName.setText(co.getName());
-        if (!channelCat.equals(null)) {
+        if (channelCat != null) {
             channelCat.setText(co.getCat());
         }
         if (!co.getPic().isEmpty()) {
