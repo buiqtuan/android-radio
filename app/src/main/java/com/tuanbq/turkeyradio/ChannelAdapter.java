@@ -41,17 +41,19 @@ public class ChannelAdapter extends BaseAdapter {
     private PlayerControl mPlayerControl;
     private ExoPlayer mExoPlayer;
     private boolean channelViewStyle = true;
+    private boolean appThem = true;
 
     SharedPreferences prefs;
     SharedPreferences.Editor editor;
     Vibrator v;
 
-    public ChannelAdapter(Context mContext, ArrayList<ChannelObject> channels, PlayerControl playerControl, ExoPlayer exoPlayer, boolean channelViewStyle) {
+    public ChannelAdapter(Context mContext, ArrayList<ChannelObject> channels, PlayerControl playerControl, ExoPlayer exoPlayer, boolean channelViewStyle, boolean appTheme) {
         this.mContext = mContext;
         this.channels = channels;
         this.mPlayerControl = playerControl;
         this.mExoPlayer = exoPlayer;
         this.channelViewStyle = channelViewStyle;
+        this.appThem = appTheme;
         prefs = mContext.getSharedPreferences(Constants.APP_PREF, Context.MODE_PRIVATE);
         editor = prefs.edit();
 
@@ -82,6 +84,10 @@ public class ChannelAdapter extends BaseAdapter {
             final LayoutInflater layoutInflater = LayoutInflater.from(mContext);
             view = channelViewStyle ? layoutInflater.inflate(R.layout.channel_layout, null)
                     : layoutInflater.inflate(R.layout.channel_view_card, null);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            view.setClipToOutline(true);
         }
 
         view.setOnClickListener(new View.OnClickListener() {
@@ -142,7 +148,7 @@ public class ChannelAdapter extends BaseAdapter {
                     editor.putString(Constants.PREF_LIST_FAV_CHANNEL, favChannelAfterRemove);
                     editor.apply();
                     ArrayList<ChannelObject> listChannels = FunctionHelper.ConvertChannelStrToList(favChannelAfterRemove);
-                    ChannelAdapter channelAdapter = new ChannelAdapter(mContext, listChannels, mPlayerControl, mExoPlayer, MainActivity.channelViewStyle);
+                    ChannelAdapter channelAdapter = new ChannelAdapter(mContext, listChannels, mPlayerControl, mExoPlayer, MainActivity.channelViewStyle, MainActivity.appTheme);
                     if (MainActivity.channelViewStyle) {
                         MainActivity.channelGrid.setAdapter(channelAdapter);
                     } else {
@@ -163,6 +169,15 @@ public class ChannelAdapter extends BaseAdapter {
                 : (ImageView) view.findViewById(R.id.card_item_img);
         final TextView channelCat = channelViewStyle ? null
                 : (TextView) view.findViewById(R.id.card_channel_cat);
+
+        if (!appThem) {
+            view.setBackgroundColor(mContext.getResources().getColor(R.color.grayWhite));
+            channelName.setTextColor(mContext.getResources().getColor(R.color.grayBlack));
+            if (channelCat != null) {
+                channelCat.setTextColor(mContext.getResources().getColor(R.color.grayBlack));
+            }
+        }
+
 
         channelName.setText(co.getName());
         if (channelCat != null) {

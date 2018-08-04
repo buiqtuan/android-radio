@@ -1,8 +1,10 @@
 package com.tuanbq.turkeyradio;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
@@ -12,6 +14,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -84,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<ChannelObject> listChannelsByCat = new ArrayList<>();
 
     //app UI state
-    public static boolean themeStyle = true; // true is night - false is day
+    public static boolean appTheme = true; // true is night - false is day
     public static boolean channelViewStyle = true; // true is grid - false is list
 
     //Ad counter
@@ -118,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
         initDefaultAppPrefs();
 
         //get app prefs
-        themeStyle = prefs.getBoolean("app_theme", true);
+        appTheme = prefs.getBoolean("app_theme", true);
         channelViewStyle = prefs.getBoolean("channels_view_style", true);
 
 
@@ -138,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
                 catChannel.setText("Type: All");
                 listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL,"")));
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
                 if (channelViewStyle) {
                     channelGrid.setAdapter(channelAdapter);
                 } else {
@@ -154,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 changeTextColorWhenSwitchingTabs(myFavorites,allChannel,catChannel);
                 String listFavChannelStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,"");
                 listChannels = FunctionHelper.ConvertChannelStrToList(listFavChannelStr);
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
                 if (channelViewStyle) {
                     channelGrid.setAdapter(channelAdapter);
                 } else {
@@ -196,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
                         searchingList.add(co);
                     }
                 }
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), searchingList, mPlayerControl, mExoPlayer, channelViewStyle);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), searchingList, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
                 if (channelViewStyle) {
                     channelGrid.setAdapter(channelAdapter);
                 } else {
@@ -229,7 +232,45 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        switchUIAppByState();
+        changeChannelViewStyleBtImg();
+        changeAppThemeBtnImg();
+        if (prefs.getBoolean("new_update_dialog", true)) {
+            createNewUpdateDialog();
+            editor.putBoolean("new_update_dialog", false);
+            editor.apply();
+        }
+    }
+
+    private void createNewUpdateDialog() {
+        AlertDialog.Builder builder;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+            } else {
+                builder = new AlertDialog.Builder(MainActivity.this);
+            }
+            builder.setTitle("Update Note")
+                    .setMessage("- Add Radio Channels from all over the world. From US, UK, China, France, Russia, ... You just need to go to setting and switch to the country you want to listen to. Enjoy it!\n" +
+                            "- Add New Radio Channels. \n" +
+                            "- Add Channel List-View mode. \n" +
+                            "- Add Night and Day theme. \n" +
+                            "- Improve App Performance. \n" +
+                            "\n" +
+                            "If you are satisfied with our application, please give us 5 star to encourage and support us to make this application better. \n" +
+                            "\n" +
+                            "Thank you for using our application.")
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
+                        }
+                    })
+                    .setIcon(R.drawable.app_icon);
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void initDefaultAppPrefs() {
@@ -247,6 +288,11 @@ public class MainActivity extends AppCompatActivity {
         //set ad counter
         if (!prefs.contains("ad_counter")) {
             editor.putInt("ad_counter", adCounter);
+            editor.apply();
+        }
+        //set dialog for new update
+        if (!prefs.contains("new_update_dialog")) {
+            editor.putBoolean("new_update_dialog", true);
             editor.apply();
         }
     }
@@ -293,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
                         listChannelsByCat.add(co);
                     }
                 }
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannelsByCat, mPlayerControl,mExoPlayer, channelViewStyle);
+                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannelsByCat, mPlayerControl,mExoPlayer, channelViewStyle, appTheme);
                 if (channelViewStyle) {
                     channelGrid.setAdapter(channelAdapter);
                 } else {
@@ -412,21 +458,23 @@ public class MainActivity extends AppCompatActivity {
         enableChangeAppStateBtns();
     }
 
-    private void switchUIAppByState() {
+    private void changeAppThemeBtnImg() {
+        if (appTheme) {
+            changeAppTheme.setBackgroundResource(0);
+            changeAppTheme.setBackgroundResource(R.drawable.day_icon);
+        } else {
+            changeAppTheme.setBackgroundResource(0);
+            changeAppTheme.setBackgroundResource(R.drawable.night_icon);
+        }
+    }
+
+    private void changeChannelViewStyleBtImg() {
         if (channelViewStyle) {
             changeViewChannelStyle.setBackgroundResource(0);
             changeViewChannelStyle.setBackgroundResource(R.drawable.list_icon);
         } else {
             changeViewChannelStyle.setBackgroundResource(0);
             changeViewChannelStyle.setBackgroundResource(R.drawable.grid_icon);
-        }
-
-        if (themeStyle) {
-            changeAppTheme.setBackgroundResource(0);
-            changeAppTheme.setBackgroundResource(R.drawable.day_icon);
-        } else {
-            changeAppTheme.setBackgroundResource(0);
-            changeAppTheme.setBackgroundResource(R.drawable.night_icon);
         }
     }
 
@@ -440,7 +488,7 @@ public class MainActivity extends AppCompatActivity {
                 if (displayedChannelState == 2) {
                     listChannels = listChannelsByCat;
                 }
-                ChannelAdapter _ca = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
+                ChannelAdapter _ca = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
                 channelGrid.setAdapter(_ca);
                 channelList.setAdapter(_ca);
                 if (channelViewStyle) {
@@ -450,17 +498,26 @@ public class MainActivity extends AppCompatActivity {
                     channelList.setVisibility(View.VISIBLE);
                     channelGrid.setVisibility(View.GONE);
                 }
-                switchUIAppByState();
+                changeChannelViewStyleBtImg();
             }
         });
 
         changeAppTheme.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                themeStyle = themeStyle ? false : true;
-                editor.putBoolean("app_theme", themeStyle);
+                appTheme = appTheme ? false : true;
+                editor.putBoolean("app_theme", appTheme);
                 editor.apply();
-
+                if (displayedChannelState == 2) {
+                    listChannels = listChannelsByCat;
+                }
+                ChannelAdapter _ca = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
+                if (channelViewStyle) {
+                    channelGrid.setAdapter(_ca);
+                } else {
+                    channelList.setAdapter(_ca);
+                }
+                changeAppThemeBtnImg();
             }
         });
     }
@@ -521,8 +578,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             appLoadingIcon.setVisibility(View.GONE);
-            channelGrid.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, true));
-            channelList.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, false));
+            channelGrid.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, true, appTheme));
+            channelList.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, false, appTheme));
             if (channelViewStyle) {
                 // display gird view
                 channelGrid.setVisibility(View.VISIBLE);
@@ -586,7 +643,7 @@ public class MainActivity extends AppCompatActivity {
                     likeBtn.setBackgroundResource(R.drawable.fav_filled_icon);
                 }
                 if (displayedChannelState == 1) {
-                    ChannelAdapter channelAdapter = new ChannelAdapter(context, listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
+                    ChannelAdapter channelAdapter = new ChannelAdapter(context, listChannels, mPlayerControl, mExoPlayer, channelViewStyle,appTheme);
                     if (channelViewStyle) {
                         channelGrid.setAdapter(channelAdapter);
                     } else {
