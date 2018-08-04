@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     private PopupWindow popUpSettingPanel;
     private PopupWindow popUpCatPanel;
 
-    public static int channelGridState = 0; //all
+    public static int displayedChannelState = 0; //all
 
     private static ArrayList<ChannelObject> listChannels = new ArrayList<>();
     private ArrayList<ChannelObject> listChannelsByCat = new ArrayList<>();
@@ -134,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
         allChannel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                channelGridState = 0;
+                displayedChannelState = 0;
                 changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
-                catChannel.setText("Category: All");
+                catChannel.setText("Type: All");
                 listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL,"")));
                 ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
                 if (channelViewStyle) {
@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
         myFavorites.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                channelGridState = 1;
+                displayedChannelState = 1;
                 changeTextColorWhenSwitchingTabs(myFavorites,allChannel,catChannel);
                 String listFavChannelStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,"");
                 listChannels = FunctionHelper.ConvertChannelStrToList(listFavChannelStr);
@@ -169,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
                 if (popUpCatPanel.isShowing()) {
                     popUpCatPanel.dismiss();
                 }
-                channelGridState = 2;
+                displayedChannelState = 2;
                 changeTextColorWhenSwitchingTabs(catChannel,allChannel,myFavorites);
                 showCatPanel(MainActivity.this, getPointOfView(catChannel));
             }
@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (channelGridState == 2) {
+                if (displayedChannelState == 2) {
                     listChannels = listChannelsByCat;
                 }
                 ArrayList<ChannelObject> searchingList = new ArrayList<>();
@@ -228,6 +228,8 @@ public class MainActivity extends AppCompatActivity {
                 backToHomeScreen();
             }
         });
+
+        switchUIAppByState();
     }
 
     private void initDefaultAppPrefs() {
@@ -284,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 listChannelsByCat.clear();
-                catChannel.setText("Category: " + catArrStr[position+1]);
+                catChannel.setText("Type: " + (catArrStr[position+1].length() > 8 ? catArrStr[position+1].subSequence(0,8) + "..." : catArrStr[position+1]));
                 listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL,"")));
                 for (ChannelObject co : listChannels) {
                     if (co.getCat().contains(catArrStr[position+1])) {
@@ -333,7 +335,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 appLoadingIcon.setVisibility(View.VISIBLE);
-                channelGrid.setVisibility(View.GONE);
+                if (channelViewStyle) {
+                    channelGrid.setVisibility(View.GONE);
+                } else {
+                    channelList.setVisibility(View.GONE);
+                }
                 changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
                 catChannel.setText("Category: All");
                 runOnUiThread(new Runnable() {
@@ -406,40 +412,57 @@ public class MainActivity extends AppCompatActivity {
         enableChangeAppStateBtns();
     }
 
+    private void switchUIAppByState() {
+        if (channelViewStyle) {
+            changeViewChannelStyle.setBackgroundResource(0);
+            changeViewChannelStyle.setBackgroundResource(R.drawable.list_icon);
+        } else {
+            changeViewChannelStyle.setBackgroundResource(0);
+            changeViewChannelStyle.setBackgroundResource(R.drawable.grid_icon);
+        }
+
+        if (themeStyle) {
+            changeAppTheme.setBackgroundResource(0);
+            changeAppTheme.setBackgroundResource(R.drawable.day_icon);
+        } else {
+            changeAppTheme.setBackgroundResource(0);
+            changeAppTheme.setBackgroundResource(R.drawable.night_icon);
+        }
+    }
+
     private void enableChangeAppStateBtns() {
         changeViewChannelStyle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 channelViewStyle = channelViewStyle ? false : true;
+                editor.putBoolean("channels_view_style", channelViewStyle);
+                editor.apply();
+                if (displayedChannelState == 2) {
+                    listChannels = listChannelsByCat;
+                }
+                ChannelAdapter _ca = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
+                channelGrid.setAdapter(_ca);
+                channelList.setAdapter(_ca);
                 if (channelViewStyle) {
                     channelGrid.setVisibility(View.VISIBLE);
                     channelList.setVisibility(View.GONE);
                 } else {
-                    channelGrid.setVisibility(View.GONE);
                     channelList.setVisibility(View.VISIBLE);
+                    channelGrid.setVisibility(View.GONE);
                 }
+                switchUIAppByState();
             }
         });
 
         changeAppTheme.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                themeStyle = themeStyle ? false : true;
+                editor.putBoolean("app_theme", themeStyle);
+                editor.apply();
 
             }
         });
-    }
-
-    private void changeChannelViewStyle() {
-        if (channelGrid.getVisibility() == View.VISIBLE) {
-            channelViewStyle = false;
-            channelGrid.setVisibility(View.GONE);
-            return;
-        }
-        if (channelList.getVisibility() == View.VISIBLE) {
-            channelViewStyle = true;
-            channelList.setVisibility(View.GONE);
-            return;
-        }
     }
 
     @Override
@@ -498,17 +521,15 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             appLoadingIcon.setVisibility(View.GONE);
+            channelGrid.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, true));
+            channelList.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, false));
             if (channelViewStyle) {
                 // display gird view
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, channelViewStyle);
-                channelGrid.setAdapter(channelAdapter);
                 channelGrid.setVisibility(View.VISIBLE);
                 channelList.setVisibility(View.GONE);
 
             } else {
                 // display list view
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
-                channelList.setAdapter(channelAdapter);
                 channelList.setVisibility(View.VISIBLE);
                 channelGrid.setVisibility(View.GONE);
             }
@@ -564,9 +585,14 @@ public class MainActivity extends AppCompatActivity {
                     listChannels = FunctionHelper.ConvertChannelStrToList(favChannelAfterAdd);
                     likeBtn.setBackgroundResource(R.drawable.fav_filled_icon);
                 }
-                if (channelGridState == 1) {
+                if (displayedChannelState == 1) {
                     ChannelAdapter channelAdapter = new ChannelAdapter(context, listChannels, mPlayerControl, mExoPlayer, channelViewStyle);
-                    channelGrid.setAdapter(channelAdapter);
+                    if (channelViewStyle) {
+                        channelGrid.setAdapter(channelAdapter);
+                    } else {
+                        channelList.setAdapter(channelAdapter);
+                    }
+
                 }
             }
         });

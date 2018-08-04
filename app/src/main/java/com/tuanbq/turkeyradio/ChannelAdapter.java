@@ -120,7 +120,7 @@ public class ChannelAdapter extends BaseAdapter {
                 editor.putInt("ad_counter",adCounter);
                 editor.apply();
                 String listFavChannelsStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,"");
-                if (MainActivity.channelGridState == 0 || MainActivity.channelGridState == 2) {
+                if (MainActivity.displayedChannelState == 0 || MainActivity.displayedChannelState == 2) {
                     if (listFavChannelsStr.toLowerCase().contains(co.getLink().toLowerCase())) {
                         Toast.makeText(mContext,"Channel " + co.getName() + " has already been added to Favorites!", Toast.LENGTH_SHORT).show();
                         return true;
@@ -143,7 +143,11 @@ public class ChannelAdapter extends BaseAdapter {
                     editor.apply();
                     ArrayList<ChannelObject> listChannels = FunctionHelper.ConvertChannelStrToList(favChannelAfterRemove);
                     ChannelAdapter channelAdapter = new ChannelAdapter(mContext, listChannels, mPlayerControl, mExoPlayer, MainActivity.channelViewStyle);
-                    MainActivity.channelGrid.setAdapter(channelAdapter);
+                    if (MainActivity.channelViewStyle) {
+                        MainActivity.channelGrid.setAdapter(channelAdapter);
+                    } else {
+                        MainActivity.channelList.setAdapter(channelAdapter);
+                    }
                     vibrateDevice(250);
                     MainActivity.likeBtn.setBackgroundResource(R.drawable.fav_empty_icon);
                     Toast.makeText(mContext,"Channel " + co.getName() + " has been removed to Favorites!", Toast.LENGTH_SHORT).show();

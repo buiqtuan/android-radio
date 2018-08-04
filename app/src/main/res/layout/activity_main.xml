@@ -97,13 +97,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="5dp"
-            android:textStyle="bold"
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
+            android:text="Type: All"
+            android:textAlignment="center"
             android:textSize="16dp"
-            android:text="Category: All"
-            android:textAlignment="center" />
+            android:textStyle="bold" />
     </LinearLayout>
 
     <ListView
