@@ -1,4 +1,4 @@
-package com.tuanbq.turkeyradio;
+package com.tuanbq.singaporeonlineradio;
 
 import org.junit.Test;
 

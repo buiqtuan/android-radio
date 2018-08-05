@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.tuanbq.turkeyradio">
+    package="com.tuanbq.singaporeonlineradio">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -13,12 +13,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <service android:enabled="true" android:name="com.tuanbq.turkeyradio.RadioService"/>
+        <service android:enabled="true" android:name="com.tuanbq.singaporeonlineradio.RadioService"/>
         <receiver
-            android:name="com.tuanbq.turkeyradio.NotificationDismissedReceiver"
+            android:name="com.tuanbq.singaporeonlineradio.NotificationDismissedReceiver"
             android:exported="false" >
         </receiver>
-        <activity android:name="com.tuanbq.turkeyradio.MainActivity"
+        <activity android:name="com.tuanbq.singaporeonlineradio.MainActivity"
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

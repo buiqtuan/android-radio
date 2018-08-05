@@ -1,4 +1,4 @@
-package com.tuanbq.turkeyradio;
+package com.tuanbq.singaporeonlineradio;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -23,6 +23,8 @@ import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.GridView;
@@ -48,8 +50,8 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    ImageButton turnOffBtn, settingBtn;
-    ImageButton setTimerBtn, reloadAppBtn, rateAppBtn;
+    ImageButton rateAppBtn, settingBtn;
+    ImageButton setTimerBtn, reloadAppBtn, backToHomeBtn, changeCountry;
     TextView allChannel, myFavorites, catChannel, networkWarning;
     public static TextView playingChannelName;
     EditText searchChannel;
@@ -90,175 +92,277 @@ public class MainActivity extends AppCompatActivity {
     public static boolean appTheme = true; // true is night - false is day
     public static boolean channelViewStyle = true; // true is grid - false is list
 
+    private boolean isCountryChanged = false;
+    private String[] countriesList;
+
     //Ad counter
     public static int adCounter = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        mContext = getApplicationContext();
-        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        try {
+            setContentView(R.layout.activity_main);
+            mContext = getApplicationContext();
+            this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-        initAppElements();
+            initAppElements();
 
-        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        FunctionHelper.volumeControl(getBaseContext(), volumeController,mAudioManager);
+            mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            FunctionHelper.volumeControl(getBaseContext(), volumeController, mAudioManager);
 
-        if (!FunctionHelper.CheckConectNetwork(getBaseContext())) {
-            networkWarning.setVisibility(View.VISIBLE);
-            networkWarning.setText("Please check your device's network connection and restart the application!");
-            appLoadingIcon.setVisibility(View.GONE);
-            return;
-        }
-
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
-
-        initDefaultAppPrefs();
-
-        //get app prefs
-        appTheme = prefs.getBoolean("app_theme", true);
-        channelViewStyle = prefs.getBoolean("channels_view_style", true);
-
-
-        //save list channel to sharedprefs
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                new LoadingDataAsync().execute();
-            }
-        });
-
-        //set onclick for all, fav and cat
-        allChannel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                displayedChannelState = 0;
-                changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
-                catChannel.setText("Type: All");
-                listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL,"")));
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
-                if (channelViewStyle) {
-                    channelGrid.setAdapter(channelAdapter);
-                } else {
-                    channelList.setAdapter(channelAdapter);
-                }
-            }
-        });
-
-        myFavorites.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                displayedChannelState = 1;
-                changeTextColorWhenSwitchingTabs(myFavorites,allChannel,catChannel);
-                String listFavChannelStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,"");
-                listChannels = FunctionHelper.ConvertChannelStrToList(listFavChannelStr);
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
-                if (channelViewStyle) {
-                    channelGrid.setAdapter(channelAdapter);
-                } else {
-                    channelList.setAdapter(channelAdapter);
-                }
-            }
-        });
-
-        catChannel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (popUpCatPanel.isShowing()) {
-                    popUpCatPanel.dismiss();
-                }
-                displayedChannelState = 2;
-                changeTextColorWhenSwitchingTabs(catChannel,allChannel,myFavorites);
-                showCatPanel(MainActivity.this, getPointOfView(catChannel));
-            }
-        });
-
-        //search channels
-        searchChannel.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
+            if (!FunctionHelper.CheckConectNetwork(getBaseContext())) {
+                networkWarning.setVisibility(View.VISIBLE);
+                networkWarning.setText("Please check your device's network connection and restart the application!");
+                appLoadingIcon.setVisibility(View.GONE);
+                return;
             }
 
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (displayedChannelState == 2) {
-                    listChannels = listChannelsByCat;
+            if (android.os.Build.VERSION.SDK_INT > 9) {
+                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+                StrictMode.setThreadPolicy(policy);
+            }
+
+            initDefaultAppPrefs();
+
+            //get app prefs
+            appTheme = prefs.getBoolean("app_theme", true);
+            channelViewStyle = prefs.getBoolean("channels_view_style", true);
+
+
+            //save list channel to sharedprefs
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    new LoadingDataAsync().execute();
                 }
-                ArrayList<ChannelObject> searchingList = new ArrayList<>();
-                if (listChannels == null || listChannels.size() == 0) {
-                    return;
-                }
-                for (ChannelObject co : listChannels) {
-                    if (co.getName().toLowerCase().contains(charSequence.toString().toLowerCase())) {
-                        searchingList.add(co);
+            });
+
+            //set onclick for all, fav and cat
+            allChannel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    displayedChannelState = 0;
+                    changeTextColorWhenSwitchingTabs(allChannel, myFavorites, catChannel);
+                    catChannel.setText("Type: All");
+                    listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL, "")));
+                    ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
+                    if (channelViewStyle) {
+                        channelGrid.setAdapter(channelAdapter);
+                    } else {
+                        channelList.setAdapter(channelAdapter);
                     }
                 }
-                ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), searchingList, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
-                if (channelViewStyle) {
-                    channelGrid.setAdapter(channelAdapter);
-                } else {
-                    channelList.setAdapter(channelAdapter);
+            });
+
+            myFavorites.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    displayedChannelState = 1;
+                    changeTextColorWhenSwitchingTabs(myFavorites, allChannel, catChannel);
+                    String listFavChannelStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL, "");
+                    listChannels = FunctionHelper.ConvertChannelStrToList(listFavChannelStr);
+                    ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
+                    if (channelViewStyle) {
+                        channelGrid.setAdapter(channelAdapter);
+                    } else {
+                        channelList.setAdapter(channelAdapter);
+                    }
                 }
-            }
+            });
 
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
-
-        //open setting panel
-        settingBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (popUpSettingPanel.isShowing()) {
-                    popUpSettingPanel.dismiss();
+            catChannel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (popUpCatPanel.isShowing()) {
+                        popUpCatPanel.dismiss();
+                    }
+                    displayedChannelState = 2;
+                    changeTextColorWhenSwitchingTabs(catChannel, allChannel, myFavorites);
+                    showCatPanel(MainActivity.this, getPointOfView(catChannel));
                 }
-                showSettingPanel(MainActivity.this,getPointOfView(settingBtn));
-            }
-        });
+            });
 
-        //turn off screen
-        turnOffBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                backToHomeScreen();
-            }
-        });
+            //search channels
+            searchChannel.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
-        changeChannelViewStyleBtImg();
-        changeAppThemeBtnImg();
-        if (prefs.getBoolean("new_update_dialog", true)) {
-            createNewUpdateDialog();
-            editor.putBoolean("new_update_dialog", false);
-            editor.apply();
+                }
+
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    if (displayedChannelState == 2) {
+                        listChannels = listChannelsByCat;
+                    }
+                    ArrayList<ChannelObject> searchingList = new ArrayList<>();
+                    if (listChannels == null || listChannels.size() == 0) {
+                        return;
+                    }
+                    for (ChannelObject co : listChannels) {
+                        if (co.getName().toLowerCase().contains(charSequence.toString().toLowerCase())) {
+                            searchingList.add(co);
+                        }
+                    }
+                    ChannelAdapter channelAdapter = new ChannelAdapter(getBaseContext(), searchingList, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
+                    if (channelViewStyle) {
+                        channelGrid.setAdapter(channelAdapter);
+                    } else {
+                        channelList.setAdapter(channelAdapter);
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+
+                }
+            });
+
+            //open setting panel
+            settingBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (popUpSettingPanel.isShowing()) {
+                        popUpSettingPanel.dismiss();
+                    }
+                    showSettingPanel(MainActivity.this, getPointOfView(settingBtn));
+                }
+            });
+
+            //turn off screen
+            rateAppBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getApplicationContext().getPackageName())));
+                }
+            });
+
+            changeChannelViewStyleBtImg();
+            changeAppThemeBtnImg();
+            if (prefs.getBoolean("new_update_dialog", true)) {
+                createDialog("Update Note", Constants.UPDATED_NOTE, MainActivity.this);
+                editor.putBoolean("new_update_dialog", false);
+                editor.apply();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    private void createNewUpdateDialog() {
-        AlertDialog.Builder builder;
+    private void createChangeCountryDialogBox() {
+        final AlertDialog.Builder builder;
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
             } else {
                 builder = new AlertDialog.Builder(MainActivity.this);
             }
-            builder.setTitle("Update Note")
-                    .setMessage("- Add Radio Channels from all over the world. From US, UK, China, France, Russia, ... You just need to go to setting and switch to the country you want to listen to. Enjoy it!\n" +
-                            "- Add New Radio Channels. \n" +
-                            "- Add Channel List-View mode. \n" +
-                            "- Add Night and Day theme. \n" +
-                            "- Improve App Performance. \n" +
-                            "\n" +
-                            "If you are satisfied with our application, please give us 5 star to encourage and support us to make this application better. \n" +
-                            "\n" +
-                            "Thank you for using our application.")
+
+            LayoutInflater inflater = getLayoutInflater();
+            View view = inflater.inflate(R.layout.countries_list, null);
+            EditText searchCountry = view.findViewById(R.id.search_country);
+            final ListView countriesListView = view.findViewById(R.id.country_list_view);
+            countriesListView.setChoiceMode(AbsListView.CHOICE_MODE_SINGLE);
+            countriesListView.setSelector(R.color.selectedItem);
+
+            changeCountryListArray(Constants.COUNTRIES_LIST);
+            CountryAdapter countryAdapter = new CountryAdapter(mContext, getCountriesArray());
+            countriesListView.setAdapter(countryAdapter);
+
+
+            searchCountry.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    ArrayList<String> listSearchedCountries = new ArrayList<>();
+                    for (int k = 0;k<Constants.COUNTRIES_LIST.length;k++) {
+                        if (Constants.COUNTRIES_LIST[k].contains(charSequence.toString().toUpperCase())) {
+                            listSearchedCountries.add(Constants.COUNTRIES_LIST[k]);
+                        }
+                    }
+                    String[] arraySearchedCountries = new String[listSearchedCountries.size()];
+                    for (int k = 0;k<listSearchedCountries.size();k++) {
+                        arraySearchedCountries[k] = listSearchedCountries.get(k);
+                    }
+                    changeCountryListArray(arraySearchedCountries);
+                    CountryAdapter countryAdapter = new CountryAdapter(mContext, arraySearchedCountries);
+                    countriesListView.setAdapter(countryAdapter);
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+
+                }
+            });
+
+            builder.setCustomTitle(view);
+
+            countriesListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, final int i, long l) {
+                    editor.putString("channels_link",Constants.BASE_URL + "." + countriesList[i].toLowerCase().replace(" ", "") + ".txt");
+                    editor.putString("changed_country", countriesList[i]);
+                    editor.apply();
+                    changeCountryState(true);
+                }
+            });
+
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+
+                }
+            });
+            builder.setPositiveButton("Change", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    if (getCountryState()) {
+                        if (popUpSettingPanel != null && popUpSettingPanel.isShowing()) {
+                            popUpSettingPanel.dismiss();
+                        }
+                        reloadingChannelsList();
+                        Toast.makeText(getBaseContext(),"Loading Radio Channels from " + prefs.getString("changed_country", ""), Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void changeCountryListArray(String[] newArray) {
+        this.countriesList = newArray;
+    }
+
+    private String[] getCountriesArray() {
+        return this.countriesList;
+    }
+
+    private void changeCountryState(boolean state) {
+        this.isCountryChanged = state;
+    }
+
+    private boolean getCountryState() {
+        return this.isCountryChanged;
+    }
+
+    public static void createDialog(String title, String msg, Context context) {
+        AlertDialog.Builder builder;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder = new AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog_Alert);
+            } else {
+                builder = new AlertDialog.Builder(context);
+            }
+            builder.setTitle(title)
+                    .setMessage(msg)
                     .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
@@ -293,6 +397,21 @@ public class MainActivity extends AppCompatActivity {
         //set dialog for new update
         if (!prefs.contains("new_update_dialog")) {
             editor.putBoolean("new_update_dialog", true);
+            editor.apply();
+        }
+        //set up channels link
+        if (!prefs.contains("channels_link")) {
+            editor.putString("channels_link", Constants.CHANNELS_LINK);
+            editor.apply();
+        }
+        //set changed country name
+        if (!prefs.contains("changed_country")) {
+            editor.putString("changed_country", "");
+            editor.apply();
+        }
+        //show side note
+        if (!prefs.contains("show_side_note")) {
+            editor.putBoolean("show_side_note", true);
             editor.apply();
         }
     }
@@ -367,7 +486,8 @@ public class MainActivity extends AppCompatActivity {
 
         setTimerBtn = layout.findViewById(R.id.set_timer_btn);
         reloadAppBtn = layout.findViewById(R.id.refresh_app_btn);
-        rateAppBtn = layout.findViewById(R.id.rate_app_btn);
+        backToHomeBtn = layout.findViewById(R.id.back_to_home);
+        changeCountry = layout.findViewById(R.id.change_country_btn);
 
         setTimerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -380,28 +500,22 @@ public class MainActivity extends AppCompatActivity {
         reloadAppBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                appLoadingIcon.setVisibility(View.VISIBLE);
-                if (channelViewStyle) {
-                    channelGrid.setVisibility(View.GONE);
-                } else {
-                    channelList.setVisibility(View.GONE);
-                }
-                changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
-                catChannel.setText("Category: All");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        new LoadingDataAsync().execute();
-                    }
-                });
+                reloadingChannelsList();
                 Toast.makeText(getBaseContext(),"Refreshing channels", Toast.LENGTH_SHORT).show();
             }
         });
 
-        rateAppBtn.setOnClickListener(new View.OnClickListener() {
+        backToHomeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getApplicationContext().getPackageName())));
+                backToHomeScreen();
+            }
+        });
+
+        changeCountry.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                createChangeCountryDialogBox();
             }
         });
 
@@ -427,7 +541,7 @@ public class MainActivity extends AppCompatActivity {
         catChannel = findViewById(R.id.cat_tv);
         searchChannel = findViewById(R.id.search_channel);
         settingBtn = findViewById(R.id.setting_btn);
-        turnOffBtn = findViewById(R.id.turn_off_btn);
+        rateAppBtn = findViewById(R.id.rate_app_btn);
         playingChannelImg = findViewById(R.id.playing_channel_img);
         playingChannelName = findViewById(R.id.playing_channel_name);
         playPauseIcon = findViewById(R.id.play_pause_icon);
@@ -456,6 +570,23 @@ public class MainActivity extends AppCompatActivity {
         changeViewChannelStyle = findViewById(R.id.change_view_channel_style);
         changeAppTheme = findViewById(R.id.change_app_theme);
         enableChangeAppStateBtns();
+    }
+
+    private void reloadingChannelsList() {
+        appLoadingIcon.setVisibility(View.VISIBLE);
+        if (channelViewStyle) {
+            channelGrid.setVisibility(View.GONE);
+        } else {
+            channelList.setVisibility(View.GONE);
+        }
+        changeTextColorWhenSwitchingTabs(allChannel,myFavorites,catChannel);
+        catChannel.setText("Type: All");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                new LoadingDataAsync().execute();
+            }
+        });
     }
 
     private void changeAppThemeBtnImg() {
@@ -511,6 +642,9 @@ public class MainActivity extends AppCompatActivity {
                 if (displayedChannelState == 2) {
                     listChannels = listChannelsByCat;
                 }
+                if (displayedChannelState == 1) {
+                    listChannels = FunctionHelper.ConvertChannelStrToList(prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,""));
+                }
                 ChannelAdapter _ca = new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl, mExoPlayer, channelViewStyle, appTheme);
                 if (channelViewStyle) {
                     channelGrid.setAdapter(_ca);
@@ -551,7 +685,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... strings) {
             try {
-                String rawData = FunctionHelper.ReadStringFromServer(Constants.CHANNELS_LINK);
+                String rawData = FunctionHelper.ReadStringFromServer(prefs.getString("channels_link", prefs.getString("channels_link", Constants.CHANNELS_LINK)));
                 editor.putString(Constants.PREF_LIST_ALL_CHANNEL,rawData);
                 editor.apply();
                 listChannels = FunctionHelper.GetJSONData(new StringBuilder(prefs.getString(Constants.PREF_LIST_ALL_CHANNEL,"")));
@@ -577,6 +711,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
+            catChannel.setText("Type: All");
+            allChannel.setText("All (" + listChannels.size() + " channels)");
             appLoadingIcon.setVisibility(View.GONE);
             channelGrid.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, true, appTheme));
             channelList.setAdapter(new ChannelAdapter(getBaseContext(), listChannels, mPlayerControl,mExoPlayer, false, appTheme));
@@ -624,6 +760,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 String favChannelStr = prefs.getString(Constants.PREF_LIST_FAV_CHANNEL,"");
                 boolean isPlayingChannelFav = favChannelStr.contains(co.getName());
+                Toast.makeText(mContext,"Channel " + co.getName() + " has already been added to Favorites!", Toast.LENGTH_LONG).show();
                 if (isPlayingChannelFav) {
                     String removedChannel = co.getName() + "100ENDCHAR001" + co.getLink() + "100ENDCHAR001" + co.getPic() + "100ENDCHAR001" + co.getCat() + "100ENDCHANNEL001";
                     String favChannelAfterRemove = favChannelStr.replace(removedChannel,"");
@@ -649,7 +786,6 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         channelList.setAdapter(channelAdapter);
                     }
-
                 }
             }
         });

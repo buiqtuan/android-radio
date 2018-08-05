@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.tuanbq.turkeyradio.RoundedCornerLayout
+<com.tuanbq.singaporeonlineradio.RoundedCornerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
@@ -44,4 +44,4 @@
 
     </LinearLayout>
 
-</com.tuanbq.turkeyradio.RoundedCornerLayout>
+</com.tuanbq.singaporeonlineradio.RoundedCornerLayout>

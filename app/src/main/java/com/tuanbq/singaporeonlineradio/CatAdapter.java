@@ -1,4 +1,4 @@
-package com.tuanbq.turkeyradio;
+package com.tuanbq.singaporeonlineradio;
 
 import android.content.Context;
 import android.graphics.Color;

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:ads="http://schemas.android.com/apk/res-auto"
-    tools:context="com.tuanbq.turkeyradio.MainActivity">
+    tools:context="com.tuanbq.singaporeonlineradio.MainActivity">
 
     <LinearLayout
         android:id="@+id/app_tool_bar"
@@ -17,11 +17,12 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
-            android:id="@+id/turn_off_btn"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:id="@+id/rate_app_btn"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:padding="3dp"
             android:layout_weight="1"
-            android:background="@drawable/back_icon" />
+            android:background="@drawable/star_icon" />
 
         <EditText
             android:id="@+id/search_channel"
@@ -54,10 +55,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="5dp"
-            android:textStyle="bold"
+            android:fontFamily="sans-serif"
             android:layout_weight="1"
             android:textSize="16dp"
-            android:text="All Channel"
+            android:text="All"
             android:ellipsize="end"
             android:maxLines="1"
             android:textAlignment="center" />
@@ -76,11 +77,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:fontFamily="sans-serif"
             android:textSize="16dp"
-            android:textStyle="bold"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="My Favorites"
+            android:text="Favorites"
             android:textAlignment="center" />
 
         <TextView
@@ -98,12 +99,12 @@
             android:layout_height="wrap_content"
             android:layout_marginRight="5dp"
             android:layout_weight="1"
+            android:fontFamily="sans-serif"
             android:ellipsize="end"
             android:maxLines="1"
             android:text="Type: All"
             android:textAlignment="center"
-            android:textSize="16dp"
-            android:textStyle="bold" />
+            android:textSize="16dp"/>
     </LinearLayout>
 
     <ListView
@@ -217,7 +218,7 @@
                     android:layout_weight="99"
                     android:ellipsize="end"
                     android:layout_marginLeft="4dp"
-                    android:text="@string/app_name" />
+                    android:text="Online Radio" />
                 <TextView
                     android:id="@+id/timer_countdown"
                     android:layout_width="50dp"

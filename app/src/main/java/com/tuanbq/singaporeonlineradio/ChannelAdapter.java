@@ -1,4 +1,4 @@
-package com.tuanbq.turkeyradio;
+package com.tuanbq.singaporeonlineradio;
 
 import android.app.NotificationManager;
 import android.content.Context;
@@ -176,7 +176,16 @@ public class ChannelAdapter extends BaseAdapter {
             if (channelCat != null) {
                 channelCat.setTextColor(mContext.getResources().getColor(R.color.grayBlack));
             }
+
+            if (!MainActivity.channelViewStyle) {
+                if (i%2 == 0) {
+                    view.setBackgroundColor(mContext.getResources().getColor(R.color.lightGray));
+                } else {
+                    view.setBackgroundColor(mContext.getResources().getColor(R.color.gray));
+                }
+            }
         }
+
 
 
         channelName.setText(co.getName());
@@ -198,6 +207,9 @@ public class ChannelAdapter extends BaseAdapter {
         } else {
             channelImg.setImageResource(R.drawable.app_icon);
         }
+
+
+
         return view;
     }
 
@@ -227,6 +239,7 @@ public class ChannelAdapter extends BaseAdapter {
                     MainActivity.changeUIByRadioStates(playbackState,mContext,co);
                     //fire noti
                     if (playbackState == ExoPlayer.STATE_READY) {
+
                         if (!MainActivity.mPlayerControl.isPlaying()) {
                             return;
                         }

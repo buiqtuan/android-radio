@@ -7,4 +7,13 @@
     <color name="pickedText">#00ffff</color>
     <color name="grayWhite">#F9F9F9</color>
     <color name="grayBlack">#212121</color>
+
+    <color name="lightGray">#DEDEDE</color>
+    <color name="gray">#C3C3C3</color>
+
+    <color name="selectedItem">#89C1A6</color>
+
+    <color name="lightDark">#343434</color>
+    <color name="dard">#252525</color>
+
 </resources>
