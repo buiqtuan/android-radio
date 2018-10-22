@@ -1,4 +1,4 @@
-package com.tuanbq.singaporeonlineradio;
+package com.tuanbq.algeriaradio;
 
 /**
  * Created by User on 5/22/2018.

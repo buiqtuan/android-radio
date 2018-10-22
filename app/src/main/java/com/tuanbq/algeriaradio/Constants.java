@@ -1,4 +1,4 @@
-package com.tuanbq.singaporeonlineradio;
+package com.tuanbq.algeriaradio;
 
 /**
  * Created by User on 5/22/2018.
@@ -12,7 +12,7 @@ public class Constants {
     public static String PREF_LIST_ALL_CAT = "PREF_LIST_ALL_CAT";
 
     //country radio links
-    public static String CHANNELS_LINK = "https://storage.googleapis.com/radioappdata/.singapore.txt";
+    public static String CHANNELS_LINK = "https://storage.googleapis.com/radioappdata/.algeria.txt";
 
     public static int OFFSET_X = -120;
     public static int OFFSET_Y = 150;

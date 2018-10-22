@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">Singapore Radio</string>
+    <string name="app_name">Algeria Radio</string>
 
     <string name="ad_banner">ca-app-pub-9562198892708304/5037895187</string>
     <string name="ad_inte">ca-app-pub-9562198892708304/4128547316</string>
+    <string name="ad_native">ca-app-pub-3940256099942544/2247696110</string>>
 </resources>

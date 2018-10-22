@@ -1,17 +1,12 @@
-package com.tuanbq.singaporeonlineradio;
+package com.tuanbq.algeriaradio;
 
 import android.content.Context;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.Transformation;
-import android.widget.LinearLayout;
 import android.widget.SeekBar;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -27,15 +22,20 @@ import java.util.ArrayList;
 public class FunctionHelper {
 
     public static boolean CheckConectNetwork(Context context) {
-        if (context == null) {
-            return false;
-        }
-        ConnectivityManager connectivityManager =
-                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo nwInfo = connectivityManager.getActiveNetworkInfo();
-        if (nwInfo != null && nwInfo.isConnectedOrConnecting()) {
-            return true;
-        } else {
+        try {
+            if (context == null) {
+                return false;
+            }
+            ConnectivityManager connectivityManager =
+                    (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo nwInfo = connectivityManager.getActiveNetworkInfo();
+            if (nwInfo != null && nwInfo.isConnectedOrConnecting()) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
@@ -57,6 +57,7 @@ public class FunctionHelper {
             bufferedReader.close();
         } catch (Exception e) {
             e.printStackTrace();
+            return "";
         }
         return content.toString();
     }
@@ -65,6 +66,9 @@ public class FunctionHelper {
         ArrayList<ChannelObject> listChannels = new ArrayList<>();
 
         try {
+            if (sb == null) {
+                throw new Exception();
+            }
             if (sb.charAt(0) == '\uFEFF') {
                 sb.deleteCharAt(0);
             }
@@ -80,29 +84,35 @@ public class FunctionHelper {
 
                 listChannels.add(sonRadio);
             }
-        } catch (JSONException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+            return listChannels;
         }
 
         return listChannels;
     }
 
     public static ArrayList<ChannelObject> ConvertChannelStrToList(String channelStr) {
-        ArrayList<ChannelObject> listCO = new ArrayList<>();
-        if (channelStr.isEmpty()) {
-            return listCO;
-        } else {
-            String[] listFavChannelArr = channelStr.split("100ENDCHANNEL001");
-            for (int i=0;i<listFavChannelArr.length;i++) {
-                ChannelObject co = new ChannelObject();
-                String[] favChannelArr = listFavChannelArr[i].split("100ENDCHAR001");
-                co.setName(favChannelArr[0]);
-                co.setLink(favChannelArr[1]);
-                co.setPic(favChannelArr[2]);
-                co.setCat(favChannelArr[3]);
-                listCO.add(co);
+        try {
+            ArrayList<ChannelObject> listCO = new ArrayList<>();
+            if (channelStr.isEmpty()) {
+                return listCO;
+            } else {
+                String[] listFavChannelArr = channelStr.split("100ENDCHANNEL001");
+                for (int i=0;i<listFavChannelArr.length;i++) {
+                    ChannelObject co = new ChannelObject();
+                    String[] favChannelArr = listFavChannelArr[i].split("100ENDCHAR001");
+                    co.setName(favChannelArr[0]);
+                    co.setLink(favChannelArr[1]);
+                    co.setPic(favChannelArr[2]);
+                    co.setCat(favChannelArr[3]);
+                    listCO.add(co);
+                }
+                return listCO;
             }
-            return listCO;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<ChannelObject>();
         }
     }
 
@@ -144,6 +154,7 @@ public class FunctionHelper {
             });
         } catch (Exception e) {
             e.printStackTrace();
+            return;
         }
     }
 

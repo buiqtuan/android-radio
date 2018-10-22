@@ -1,4 +1,4 @@
-package com.tuanbq.singaporeonlineradio;
+package com.tuanbq.algeriaradio;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
